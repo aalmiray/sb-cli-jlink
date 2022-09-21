@@ -8,7 +8,7 @@ via link:https://jreleaser.org[JReleaser].
 
 == Prerequisites
 
-WARNING: Java 11 is required to build this sample.
+WARNING: Java 17 is required to build this sample.
 
 ```
 $ ./mvnw -Pjdks package -DskipTests

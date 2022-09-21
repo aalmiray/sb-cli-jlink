@@ -17,11 +17,11 @@
         <jreleaser-plugin.version>1.2.0</jreleaser-plugin.version>
         <os-plugin.version>1.7.0</os-plugin.version>
         <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
-        <maven.compiler.parameters>true</maven.compiler.parameters>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <java.version>11.0.11</java.version>
+        <java.version>17.0.4.1</java.version>
         <repackage.classifier/>
+        <launcher.class.name>org.springframework.boot.loader.JarLauncher</launcher.class.name>
     </properties>
 
     <name>sb-cli-jlink</name>
@@ -75,28 +75,31 @@
                         <jreleaser>
                             <environment>
                                 <properties>
-                                    <jdkFilePrefix>zulu11.48.21-ca-jdk11.0.11</jdkFilePrefix>
+                                    <jdkFilePrefix>zulu17.36.17-ca-jdk17.0.4.1</jdkFilePrefix>
                                 </properties>
                             </environment>
+                            <project>
+                                <stereotype>CLI</stereotype>
+                                <java>
+                                    <mainClass>${launcher.class.name}</mainClass>
+                                </java>
+                            </project>
                             <assemble>
                                 <jlink>
                                     <sb-cli-jlink>
                                         <active>ALWAYS</active>
-                                        <java>
-                                            <mainClass>org.springframework.boot.loader.JarLauncher</mainClass>
-                                        </java>
                                         <imageName>{{distributionName}}-{{projectVersion}}</imageName>
                                         <targetJdks>
                                             <targetJdk>
-                                                <path>${project.build.directory}/jdks/zulu11Osx/{{jdkFilePrefix}}-macosx_x64/zulu-11.jdk/Contents/Home</path>
+                                                <path>${project.build.directory}/jdks/zulu17Osx/{{jdkFilePrefix}}-macosx_x64/zulu-17.jdk/Contents/Home</path>
                                                 <platform>osx-x86_64</platform>
                                             </targetJdk>
                                             <targetJdk>
-                                                <path>${project.build.directory}/jdks/zulu11Linux/{{jdkFilePrefix}}-linux_x64</path>
+                                                <path>${project.build.directory}/jdks/zulu17Linux/{{jdkFilePrefix}}-linux_x64</path>
                                                 <platform>linux-x86_64</platform>
                                             </targetJdk>
                                             <targetJdk>
-                                                <path>${project.build.directory}/jdks/zulu11Windows/{{jdkFilePrefix}}-win_x64</path>
+                                                <path>${project.build.directory}/jdks/zulu17Windows/{{jdkFilePrefix}}-win_x64</path>
                                                 <platform>windows-x86_64</platform>
                                             </targetJdk>
                                         </targetJdks>
@@ -109,10 +112,33 @@
                                             <arg>--bind-services</arg>
                                         </args>
                                         <mainJar>
-                                            <path>${project.build.directory}/{{distributionName}}-{{projectVersion}}.jar</path>
+                                            <path>${project.build.directory}/sb-cli-jlink-{{projectVersion}}.jar</path>
                                         </mainJar>
                                     </sb-cli-jlink>
                                 </jlink>
+                                <jpackage>
+                                    <sb-cli>
+                                        <active>ALWAYS</active>
+                                        <jlink>sb-cli-jlink</jlink>
+                                        <verbose>true</verbose>
+                                        <applicationPackage>
+                                            <appName>sb-cli</appName>
+                                            <vendor>ACME</vendor>
+                                            <appVersion>1.0.0</appVersion>
+                                        </applicationPackage>
+                                        <osx>
+                                            <types>pkg</types>
+                                            <packageIdentifier>com.example.sb-cli</packageIdentifier>
+                                        </osx>
+                                        <linux>
+                                            <types>deb</types>
+                                            <maintainer>ACME</maintainer>
+                                        </linux>
+                                        <mainJar>
+                                            <path>${project.build.directory}/sb-cli-jlink-{{projectVersion}}.jar</path>
+                                        </mainJar>
+                                    </sb-cli>
+                                </jpackage>
                             </assemble>
                             <release>
                                 <github>
@@ -168,17 +194,17 @@
                         <configuration>
                             <pkgs>
                                 <pkg>
-                                    <name>zulu11Linux</name>
+                                    <name>zulu17Linux</name>
                                     <platform>linux-x86_64</platform>
                                     <version>${java.version}</version>
                                 </pkg>
                                 <pkg>
-                                    <name>zulu11Osx</name>
+                                    <name>zulu17Osx</name>
                                     <platform>osx-x86_64</platform>
                                     <version>${java.version}</version>
                                 </pkg>
                                 <pkg>
-                                    <name>zulu11Windows</name>
+                                    <name>zulu17Windows</name>
                                     <platform>windows-x86_64</platform>
                                     <version>${java.version}</version>
                                 </pkg>
