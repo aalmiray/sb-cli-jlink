@@ -1,21 +1,51 @@
-= sb-cli
+= sb-cli-jlink
 
-Sample Spring Boot CLI application.
+Sample Spring Boot CLI application (packaged with jlink and jpackage)
 
-Shows how a link:https://spring.io/projects/spring-boot[Spring Boot] application may be configured and packaged to create
-native executables with GraalVM Native Image, as well as creating binary distributions (packaged as `.zip` and `.tar.gz`),
-finally publishing said binaries as assets on a Git release via link:https://jreleaser.org[JReleaser].
+Shows how a link:https://spring.io/projects/spring-boot[Spring Boot] application may be configured and packaged to create cross-platform
+custom Java Runtimes with jlink, package each JR as a zip distribution and publish them as assets on a Git release
+via link:https://jreleaser.org[JReleaser].
 
-== Building
+== Prerequisites
 
-`$ ./mvnw -Pnative package -DskipTests`
+WARNING: Java 11 is required to build this sample.
 
-== Packaging
+```
+$ ./mvnw -Pjdks package -DskipTests
+$ ./mvnw -Passemble package
+```
 
-`$ ./mvnw -Pdist package -DskipTests`
+Inspect the artifacts found at `target/jreleaser/assemble/sb-cli-jlink/jlink` and run one:
+
+`$ target/jreleaser/assemble/sb-cli-jlink/jlink/work-linux-x86_64/sb-cli-jlink-0.1.0-linux-x86_64/bin/sb-cli-jlink`
 
 == Releasing
 
-Posting a release from a local environment only when binaries for the current platform are available
+WARNING: Requires a GitHub token for publishing a release to GitHub.
 
-`$ ./mvnw -Prelease jreleaser:release -Djreleaser.select.current.platform`
+1. Create a GitHub Personal Access Token.
+See link:https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token[Creating a personal access token]
+for instructions.
+2. Store the token as an environment variable (`JRELEASER_GITHUB_TOKEN`) or save it at a configuration file as explained
+at link:https://jreleaser.org/guide/latest/configuration/environment.html[JReleaser's environment settings].
+
+Posting a release from a local environment
+
+.Display configuration
+`$ ./mvnw -Prelease jreleaser:config`
+
+.Dryrun mode
+`$ ./mvnw -Prelease jreleaser:release -Djreleaser.dryrun=true`
+
+.For production
+`$ ./mvnw -Prelease jreleaser:release`
+
+Inspect additional artifacts found at `target/jreleaser`:
+
+```
+target/jreleaser/
+├── output.properties
+├── release
+│   └── CHANGELOG.md
+└── trace.log
+```

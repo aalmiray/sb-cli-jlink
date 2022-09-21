@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.example</groupId>
-    <artifactId>sb-cli</artifactId>
+    <artifactId>sb-cli-jlink</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 
     <parent>
@@ -13,21 +13,21 @@
     </parent>
 
     <properties>
-        <assembly-plugin.version>3.4.2</assembly-plugin.version>
+        <compiler-plugin.version>3.10.1</compiler-plugin.version>
         <jreleaser-plugin.version>1.2.0</jreleaser-plugin.version>
         <os-plugin.version>1.7.0</os-plugin.version>
-        <java.version>11</java.version>
+        <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
+        <maven.compiler.parameters>true</maven.compiler.parameters>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <java.version>11.0.11</java.version>
         <repackage.classifier/>
-        <spring-native.version>0.12.1</spring-native.version>
-        <exec.mainClass>com.example.Main</exec.mainClass>
-        <executable-suffix/>
-        <artifactsDir>target/distributions</artifactsDir>
     </properties>
 
-    <name>sb-cli</name>
-    <description>sb-cli - Sample Spring Boot CLI application</description>
+    <name>sb-cli-jlink</name>
+    <description>sb-cli-jlink - Sample Spring Boot CLI application</description>
     <inceptionYear>2021</inceptionYear>
-    <url>https://github.com/aalmiray/sb-cli</url>
+    <url>https://github.com/aalmiray/sb-cli-jlink</url>
 
     <developers>
         <developer>
@@ -49,11 +49,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.experimental</groupId>
-            <artifactId>spring-native</artifactId>
-            <version>${spring-native.version}</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -65,6 +60,85 @@
             </extension>
         </extensions>
 
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jreleaser</groupId>
+                    <artifactId>jreleaser-maven-plugin</artifactId>
+                    <version>${jreleaser-plugin.version}</version>
+                    <configuration>
+                        <jreleaser>
+                            <environment>
+                                <properties>
+                                    <jdkFilePrefix>zulu11.48.21-ca-jdk11.0.11</jdkFilePrefix>
+                                </properties>
+                            </environment>
+                            <assemble>
+                                <jlink>
+                                    <sb-cli-jlink>
+                                        <active>ALWAYS</active>
+                                        <java>
+                                            <mainClass>org.springframework.boot.loader.JarLauncher</mainClass>
+                                        </java>
+                                        <imageName>{{distributionName}}-{{projectVersion}}</imageName>
+                                        <targetJdks>
+                                            <targetJdk>
+                                                <path>${project.build.directory}/jdks/zulu11Osx/{{jdkFilePrefix}}-macosx_x64/zulu-11.jdk/Contents/Home</path>
+                                                <platform>osx-x86_64</platform>
+                                            </targetJdk>
+                                            <targetJdk>
+                                                <path>${project.build.directory}/jdks/zulu11Linux/{{jdkFilePrefix}}-linux_x64</path>
+                                                <platform>linux-x86_64</platform>
+                                            </targetJdk>
+                                            <targetJdk>
+                                                <path>${project.build.directory}/jdks/zulu11Windows/{{jdkFilePrefix}}-win_x64</path>
+                                                <platform>windows-x86_64</platform>
+                                            </targetJdk>
+                                        </targetJdks>
+                                        <copyJars>true</copyJars>
+                                        <jdeps>
+                                            <multiRelease>base</multiRelease>
+                                            <ignoreMissingDeps>true</ignoreMissingDeps>
+                                        </jdeps>
+                                        <args>
+                                            <arg>--bind-services</arg>
+                                        </args>
+                                        <mainJar>
+                                            <path>${project.build.directory}/{{distributionName}}-{{projectVersion}}.jar</path>
+                                        </mainJar>
+                                    </sb-cli-jlink>
+                                </jlink>
+                            </assemble>
+                            <release>
+                                <github>
+                                    <tagName>{{projectVersion}}</tagName>
+                                    <releaseName>{{projectVersion}}</releaseName>
+                                    <overwrite>true</overwrite>
+                                    <changelog>
+                                        <formatted>ALWAYS</formatted>
+                                        <preset>conventional-commits</preset>
+                                        <format>- {{commitShortHash}} {{commitTitle}}</format>
+                                        <contributors>
+                                            <format>- {{contributorName}}</format>
+                                        </contributors>
+                                        <hide>
+                                            <categories>merge</categories>
+                                            <contributors>GitHub,dependabot</contributors>
+                                        </hide>
+                                    </changelog>
+                                </github>
+                            </release>
+                        </jreleaser>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -79,104 +153,43 @@
                     </image>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.springframework.experimental</groupId>
-                <artifactId>spring-aot-maven-plugin</artifactId>
-                <version>${spring-native.version}</version>
-                <executions>
-                    <execution>
-                        <id>test-generate</id>
-                        <goals>
-                            <goal>test-generate</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>generate</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${assembly-plugin.version}</version>
-                <configuration>
-                    <attach>false</attach>
-                    <appendAssemblyId>false</appendAssemblyId>
-                    <finalName>${project.artifactId}-${project.version}-${os.detected.classifier}</finalName>
-                    <outputDirectory>${project.build.directory}/distributions</outputDirectory>
-                    <workDirectory>${project.build.directory}/assembly/work</workDirectory>
-                    <skipAssembly>true</skipAssembly>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-distribution</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
-    <repositories>
-      <repository>
-        <id>spring-releases</id>
-        <name>Spring Releases</name>
-        <url>https://repo.spring.io/release</url>
-        <snapshots>
-          <enabled>false</enabled>
-        </snapshots>
-      </repository>
-    </repositories>
-    <pluginRepositories>
-      <pluginRepository>
-        <id>spring-releases</id>
-        <name>Spring Releases</name>
-        <url>https://repo.spring.io/release</url>
-        <snapshots>
-          <enabled>false</enabled>
-        </snapshots>
-      </pluginRepository>
-    </pluginRepositories>
-    
+
     <profiles>
         <profile>
-            <id>native</id>
-            <properties>
-                <repackage.classifier>exec</repackage.classifier>
-                <native-buildtools.version>0.9.13</native-buildtools.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.junit.platform</groupId>
-                    <artifactId>junit-platform-launcher</artifactId>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
+            <id>jdks</id>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.graalvm.buildtools</groupId>
-                        <artifactId>native-maven-plugin</artifactId>
-                        <version>${native-buildtools.version}</version>
-                        <extensions>true</extensions>
+                        <groupId>org.jreleaser</groupId>
+                        <artifactId>jdks-maven-plugin</artifactId>
+                        <version>${jreleaser-plugin.version}</version>
+                        <configuration>
+                            <pkgs>
+                                <pkg>
+                                    <name>zulu11Linux</name>
+                                    <platform>linux-x86_64</platform>
+                                    <version>${java.version}</version>
+                                </pkg>
+                                <pkg>
+                                    <name>zulu11Osx</name>
+                                    <platform>osx-x86_64</platform>
+                                    <version>${java.version}</version>
+                                </pkg>
+                                <pkg>
+                                    <name>zulu11Windows</name>
+                                    <platform>windows-x86_64</platform>
+                                    <version>${java.version}</version>
+                                </pkg>
+                            </pkgs>
+                        </configuration>
                         <executions>
                             <execution>
-                                <id>test-native</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>test</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>build-native</id>
+                                <id>download-jdks</id>
                                 <phase>package</phase>
                                 <goals>
-                                    <goal>build</goal>
+                                    <goal>setup-disco</goal>
                                 </goals>
                             </execution>
                         </executions>
@@ -185,40 +198,27 @@
             </build>
         </profile>
         <profile>
-            <id>dist</id>
-            <activation>
-                <property>
-                    <name>dist</name>
-                </property>
-            </activation>
+            <id>assemble</id>
             <properties>
-                <skipTests>true</skipTests>
+                <jreleaser.config.assembly>true</jreleaser.config.assembly>
             </properties>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <configuration combine.self="append">
-                            <skipAssembly>false</skipAssembly>
-                            <descriptors>
-                                <descriptor>src/main/assembly/assembly.xml</descriptor>
-                            </descriptors>
-                        </configuration>
+                        <groupId>org.jreleaser</groupId>
+                        <artifactId>jreleaser-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assemble</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>assemble</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
-            <id>dist-windows</id>
-            <activation>
-                <os>
-                    <family>windows</family>
-                </os>
-            </activation>
-            <properties>
-                <executable-suffix>.exe</executable-suffix>
-            </properties>
         </profile>
         <profile>
             <id>release</id>
@@ -227,49 +227,6 @@
                     <plugin>
                         <groupId>org.jreleaser</groupId>
                         <artifactId>jreleaser-maven-plugin</artifactId>
-                        <version>${jreleaser-plugin.version}</version>
-                        <configuration>
-                            <jreleaser>
-                                <release>
-                                    <github>
-                                        <tagName>{{projectVersion}}</tagName>
-                                        <releaseName>{{projectVersion}}</releaseName>
-                                        <overwrite>true</overwrite>
-                                        <changelog>
-                                            <formatted>ALWAYS</formatted>
-                                            <format>- {{commitShortHash}} {{commitTitle}}</format>
-                                            <preset>conventional-commits</preset>
-                                            <contributors>
-                                                <format>- {{contributorName}}</format>
-                                            </contributors>
-                                            <hide>
-                                                <categories>merge</categories>
-                                                <contributors>GitHub,dependabot</contributors>
-                                            </hide>
-                                        </changelog>
-                                    </github>
-                                </release>
-                                <distributions>
-                                    <sb-cli>
-                                        <type>NATIVE_IMAGE</type>
-                                        <artifacts>
-                                            <artifact>
-                                                <path>{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-linux-x86_64.tar.gz</path>
-                                                <platform>linux-x86_64</platform>
-                                            </artifact>
-                                            <artifact>
-                                                <path>{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-windows-x86_64.zip</path>
-                                                <platform>windows-x86_64</platform>
-                                            </artifact>
-                                            <artifact>
-                                                <path>{{artifactsDir}}/{{distributionName}}-{{projectVersion}}-osx-x86_64.zip</path>
-                                                <platform>osx-x86_64</platform>
-                                            </artifact>
-                                        </artifacts>
-                                    </sb-cli>
-                                </distributions>
-                            </jreleaser>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
